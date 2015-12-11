@@ -16,7 +16,7 @@ for(c=0; c<brickColumnCount; c++) {
         bricks[c][r] = { x: 0, y: 0, status: 1  };
     }
 }
-var lives = 100;
+var lives = 2;
 var score = 0;
 var x = canvas.width/2;
 var y = canvas.height-30;
