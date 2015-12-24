@@ -1,11 +1,11 @@
 var month_name_arr = ["January","February","March","April","May","June","July","August","September","October","November","Decembevr"];
-var day_name_arr = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];	
+var day_name_arr = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 var date_current = new Date();
 var year_to_show = date_current.getFullYear();
 var month_to_show = date_current.getMonth() + 1;
 var haschange_input = false;
 var date_to_show_str;
-var hasshow_schedule = true;
+var hasShow_schedule = true;
 
 function daythClick( day_numb ) {
 	if(month_to_show < 10 ){
@@ -14,18 +14,18 @@ function daythClick( day_numb ) {
 }
 function changeTime( type_of_change_date ) {
 	switch( type_of_change_date ) {
-		case "leftBig": 
+		case "leftBig":
 			year_to_show--; break;
-		case "leftSmall": 
+		case "leftSmall":
 			month_to_show--;
 			if (month_to_show == 0) {
 				month_to_show = 12;
 				year_to_show--;
 			};
 		break;
-		case "rightBig": 
+		case "rightBig":
 			year_to_show++;break;
-		case "rightSmall": 
+		case "rightSmall":
 			month_to_show++;
 			if (month_to_show == 13) {
 				month_to_show = 1;
@@ -50,7 +50,7 @@ function changeInputText() {
 	var input = document.getElementById("inputText").value;
 	var date_format =new RegExp("[1-9][0-9][0-9][0-9]-([1][0-2]|[0][1-9])-[0-9]");
 	if (date_format.test(input)) {
-		
+
 		var month_numb_input = parseInt(input.substring(6,7));//get month from input
 		if (month_numb_input > 0 && month_numb_input < 10) {//make date_to_show_str to correct fomat YYYY - MM - DD
 			date_to_show_str = input.substring(0,7) + "-1";
@@ -83,17 +83,17 @@ function update () {
 			table_calendar.deleteRow(3);
 	}
 	switch(date_to_show.getMonth() + 1) {
-		case 1: 
+		case 1:
 		case 3:
-		case 5: 
+		case 5:
 		case 7:
 		case 8:
 		case 10:
 		case 12:
 			day_numb_of_month_show = 31; break;
-		case 4: 
-		case 6: 
-		case 9: 
+		case 4:
+		case 6:
+		case 9:
 		case 11:
 			day_numb_of_month_show = 30; break;
 		case 2:
@@ -156,17 +156,38 @@ function buildDay() {
 }
 function hideSchedualOrNot ()
 {
-	if (hasshow_schedule == true) {
+	if (hasShow_schedule == true) {
 		document.getElementById('tableCalendar').style.display = "block";
 	}
 		else {
 		document.getElementById('tableCalendar').style.display = "none";
 	}
-	hasshow_schedule =! hasshow_schedule;
+	hasShow_schedule =! hasShow_schedule;
 }
 function changeStyleMouseOver (testsend) {
 	testsend.parentNode.style.backgroundColor = "blue";
 }
 function changeStyleMouseOut (testsend) {
 	testsend.parentNode.style.backgroundColor = "white";
+}
+function builAllIntitial() {
+	document.write("<div id = 'check'>");
+	document.write("<input id = 'inputText' type = 'text' name = 'dateChoice' onchange = 'changeInputText()'>");
+	document.write("<img style=' margin-bottom: -6px;width: 3%; height: 25px;' src='img/timeschedule-512.png' alt='timesschedule' onclick='hideSchedualOrNot()'>");
+	document.write("<table id = 'tableCalendar' style='display:none;'>");
+	document.write("<tr>");
+	document.write("<td><img src = 'img/arrow-left-big.png' onclick = \"changeTime('leftBig')\" ></td>");
+	document.write("<td><img src = 'img/arrow-left-small.png' onclick = \"changeTime('leftSmall')\" >");
+	document.write("</td> ");
+	buildMonth();
+	buildYear();
+	document.write("<td><img src = 'img/arrow-right-small.png' onclick = \"changeTime('rightSmall')\" ></td>");
+	document.write("<td><img src = 'img/arrow-right-big.png' onclick = \"changeTime('rightBig')\" ></td>");
+	document.write("</tr>");
+	buildDay()
+	document.getElementById('months').value = 11;
+	document.getElementById('years').value = 2015;
+	document.write("</table>");
+	document.write("</div>");
+	update();
 }
