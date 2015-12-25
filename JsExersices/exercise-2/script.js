@@ -1,5 +1,5 @@
 var month_name_arr = ["January","February","March","April","May","June","July","August","September","October","November","Decembevr"];
-var day_name_arr = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var day_name_arr = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];	
 var date_current = new Date();
 var year_to_show = date_current.getFullYear();
 var month_to_show = date_current.getMonth() + 1;
@@ -29,17 +29,17 @@ function update () {
 			table_calendar.deleteRow(3);
 	}
 	switch(date_to_show.getMonth() + 1) {
-		case 1:
+		case 1: 
 		case 3:
-		case 5:
+		case 5: 
 		case 7:
 		case 8:
 		case 10:
 		case 12:
 			day_numb_of_month_show = 31; break;
-		case 4:
-		case 6:
-		case 9:
+		case 4: 
+		case 6: 
+		case 9: 
 		case 11:
 			day_numb_of_month_show = 30; break;
 		case 2:
@@ -82,7 +82,7 @@ function buildMonth() {
 		document.write("<option value='" + tamp + "'>" + month_name_arr[i] + "</option>");
 	};
 	document.write("</select>");
-	document.write("</td>");
+	document.write("</td>");	
 	document.getElementById("months").value = 11;
 }
 //vẻ selection năm
@@ -138,31 +138,31 @@ function checkValue (testsend, casechoice) {
 	    			var validOrNot = checkvalueajax.responseText;
 					if (checkvalueajax.responseText === "false") {
 		    			switch( casechoice ) {
-		    				case "1":
+		    				case "1": 
 		    					document.getElementById('check_user_name').innerHTML = "Username lenghth min 8 letter";
 		    					break;
-		    				case "2":
+		    				case "2": 
 		    					document.getElementById('check_password').innerHTML = "Password lenghth min 8 letter";
 		    					break;
-		    				case "3":
-		    					document.getElementById('check_email').innerHTML = "Email Wrong Format";
+		    				case "3": 
+		    					document.getElementById('check_email').innerHTML = "Email Wrong Format"; 
 		    					break;
-		    				default:
-		    					document.getElementById('check_email').innerHTML = "Email Wrong Format";
+		    				default: 
+		    					document.getElementById('check_email').innerHTML = "Email Wrong Format"; 
 		    			}
 		    		} else {
 		    				switch(casechoice) {
-		    				case "1":
+		    				case "1": 
 		    					document.getElementById('check_user_name').innerHTML = "";
 		    					break;
-		    				case "2":
+		    				case "2": 
 		    					document.getElementById('check_password').innerHTML = "";
 		    					break;
-		    				case "3":
-		    					document.getElementById('check_email').innerHTML = "";
+		    				case "3": 
+		    					document.getElementById('check_email').innerHTML = ""; 
 		    					break;
-		    				default:
-		    						document.getElementById('check_email').innerHTML = "";
+		    				default: 
+		    						document.getElementById('check_email').innerHTML = ""; 
 		    			}
 		    		}
  			 	};
@@ -204,18 +204,18 @@ function daythClick(day_numb) {
 */
 function changeTimeIcon( type_of_change_date ) {
 	switch( type_of_change_date ) {
-		case "leftBig":
+		case "leftBig": 
 			year_to_show--; break;
-		case "leftSmall":
+		case "leftSmall": 
 			month_to_show--;
 			if (month_to_show == 0) {
 				month_to_show = 12;
 				year_to_show--;
 			};
 		break;
-		case "rightBig":
+		case "rightBig": 
 			year_to_show++; break;
-		case "rightSmall":
+		case "rightSmall": 
 			month_to_show++;
 			if (month_to_show == 13) {
 				month_to_show = 1;
@@ -248,7 +248,7 @@ function changeInputText() {
 	var input = document.getElementById("inputText").value;;
 	var date_format =new RegExp("[1-9][0-9][0-9][0-9]-([1][0-2]|[0][1-9])-[0-9]");
 	if (date_format.test(input)) {
-
+		
 		var month_numb_input = parseInt(input.substring(6,7));//get month from input
 		if (month_numb_input > 0 && month_numb_input < 10) {//make date_to_show_str to correct fomat YYYY - MM - DD
 			date_to_show_str = input.substring(0,7) +"-1";

@@ -112,8 +112,7 @@ function update () {
 				numb_of_cell_on_table++;
 			}
 		}else {
-			if((numb_of_cell_on_table - 1) % 7 == 0) buil_day_all_str += "</tr>";
-     		else buil_day_all_str += "<td></td>";
+      buil_day_all_str += "<td></td>";
 		}
 	};
   $("#tableCalendar").append(buil_day_all_str);
