@@ -14,35 +14,10 @@ $email_format =
                            of a period and two or more alphanumeric
                            or hyphen charactures. */
   '$/';
-
-$type = $_POST["type"];
-switch ($type) {
-	case '1':
 		$userName = $_POST["userName"];
 		if ($userName !== "") {
 			if (strlen($userName) > 7) {
 					echo "true";
 				} else echo "false";
 		}
-		break;
-	case '2':
-		$passWord = $_POST["passWord"];
-		if ($passWord !== "") {
-			if (strlen($passWord) > 7) {
-					echo "true";
-				}else echo "false";
-		}
-		break;
-	case '3':
-		$email = $_POST["email"];
-		if ($email !== "") {
-				if (preg_match($email_format, $email)) {
-					echo "true";
-				}else echo "false";
-		}
-		break;
-	default:
-		# code...
-		break;
-}
 ?>
