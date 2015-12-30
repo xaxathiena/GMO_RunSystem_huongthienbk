@@ -6,10 +6,9 @@ var situation_ctx = situation_canvas.getContext("2d");
 //Audio
 var background_music = new Audio("res/sound/musicbackground.mp3");
 var game_over_music = new Audio("res/sound/gameover.wav");
+sessionStorage.highScore = 0;
+sessionStorage.yourScore = 0;
 
-const FPS = 60;
-const TICKS = 1000/FPS;
-var clockRadius = 100;
 var monter_positionX = main_canvas.width / 2;//width center of canvas
 var monter_positionY = main_canvas.height / 2;//height center of canvas
 var armLength = 250;//radius of monter appearance circle
@@ -26,7 +25,7 @@ var main_run;
 var speed = 1000;
 var speed_monter = 1.0;
 var time_change_level = 20000;
-var score = 0;
+var score = 10;
 var level = 1;
 var lives = 5;
 var livesBonus = 0;
@@ -35,6 +34,7 @@ var stop_numb = 3;
 var pause_numb = 3;
 var start_time;
 var remaining_time = 20000;
+
 //check img loaded or not
 var isLoad_boom = false;
 var isLoad_pause = false;
@@ -43,15 +43,18 @@ var isLoad_stop = false;
 var isLoad_heart = false;
 var isLoad_play = false;
 var isHeart_big = false;
+var isLoad_blood = false;
 //status of game
-var canClick = true;
+var canClick_main_screen = true;
 var canUse_boom = true;
 var canPause = true;
 var canStop = true;
 var canReset = true;
 var canPlay = false;
+var canPlay_again = false;
 var isGame_over = false;
 var canCountdown_pass_level = false;
+var isNew_highScore = false;
 //control option
 var canClick_pause = true;
 var canclick_boom = true;
@@ -87,83 +90,197 @@ var game_over = new Image();
 game_over.src = "img/gameover.png";
 var play_again = new Image();
 play_again.src = "img/play_again.png";
-//handing event mouse click
-  function mouseMoveHandler(e) {
-var relativeX_situation = e.clientX - situation_canvas.offsetLeft;
-var relativeY_situation = e.clientY - situation_canvas.offsetTop;
-var relativeX_main = e.clientX - main_canvas.offsetLeft;
-var relativeY_main = e.clientY - main_canvas.offsetTop;
-//handing event click options (boom, reset, pause, stop)
-if (relativeY_situation > 0 && relativeY_situation < 110) {//clicked on situation place
-  if (relativeY_situation > 60 && relativeY_situation < 100) {//height of all option
-    if (relativeX_situation > resetX && relativeX_situation < (resetX + 40)) {
-      handingEventOptionClicked("reset");
-      return;
-    }
+var blood_img = new Image();
+blood_img.src = "img/blood.png";
+
+
+function resetMonters(){
+  for (var i = 0; i < monters_numb; i++) {
+    monters[i] = {
+      x : 0,
+      y : 0,
+      run_stepX : 0,
+      run_stepY : 0,
+      status : 0,
+      clicked: false,
+      sideAppear: 0,
+      isSwap_direction: false,
+      point_swap_direction : 0
+    };
   }
 }
-if (canClick||canPlay) {
-  if (relativeY_situation > 0 && relativeY_situation < 110) {//clicked on situation place
-    if (relativeY_situation > 60 && relativeY_situation < 100) {//height of all option
-      if (relativeX_situation > boomX && relativeX_situation < (boomX + 40)) {
-        if (canclick_boom) {
-          handingEventOptionClicked("boom");
-          return;
-        }
-      }
-      if (relativeX_situation > stopX && relativeX_situation < (stopX + 40)) {
-        if (canclick_stop) {
-          handingEventOptionClicked("stop");
-          return;
-        }
-      }
-      if (relativeX_situation > pauseX && relativeX_situation < (pauseX + 40)) {
-        if (canClick_pause) {
-          handingEventOptionClicked("pause");
-          return;
-        }
-      }
-    }
-    return;
-  }
-  //handing event click main space
-  var isHit = false;
-  for (var i = 0; i < ((monters_appeared_mub < monters_numb)?monters_appeared_mub:20); i++) {
-    if (monters[i].status == 1 && //handing status of monter
-      (relativeX_main > monters[i].x - 50) && (relativeX_main < monters[i].x + 50) && //if mouse point > leftSide and < rightSide of monter
-      (relativeY_main > monters[i].y - 50) && (relativeY_main < monters[i].y + 50)) {//if mouse point > topSide and < bottomSide of mnter
-        monters[i].status = 0;
-        score ++;
-        livesBonus++;
-        var monter_die_music = new Audio("res/sound/monterdie.wav");
-        monter_die_music.play();
-        if (livesBonus == 5) {
-          lives++;
-          if (lives == 8) {
-            isHeart_big = true;
-          }
-          livesBonus = 0;
-        }
-        isHit = true;
-      }
-    }
-    if (!isHit) {
-      lives--;
-      var click_fail_music = new Audio("res/sound/clickfail.wav");
-      click_fail_music.play();
-      checkLives();
-    }
-  }
-  if (isGame_over) {
-    if (relativeX_main > (main_canvas.width/2 - 50) && relativeX_main < (main_canvas.width/2 + 50) &&
-    relativeY_main > 200 && relativeY_main < 300) {
-      isGame_over = false;
-      canClick = true;
-      reset();
-    }
+function getRandomIntInclusive(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+//------------------------------------------------------
+function setNewMonter() {
+  if (monters_appeared_mub < monters_numb) {
+    randomDirection(monters[monters_appeared_mub]);
+    monters[monters_appeared_mub].status = 1;
+    clearInterval(auto_run_monter);
+  } else {
+    checkAllMonterDied();
   }
 }
 
+function randomDirection(monter) {
+  var sideAppear = getRandomIntInclusive(1,4);
+  var random_height_point = getRandomIntInclusive(0,main_canvas.height);
+  var random_width_point = getRandomIntInclusive(0,main_canvas.width);
+  monter.sideAppear = sideAppear;
+  console.log(sideAppear);
+  switch (sideAppear) {
+    case 1:
+      monter.x = 0;
+      monter.y = getRandomIntInclusive(0,main_canvas.height - 50);
+      monter.run_stepX = main_canvas.width/500;
+      monter.run_stepY = (random_height_point - monter.y)/500;
+      if(getRandomIntInclusive(0,1)) {monter.point_swap_direction = 600; break;}
+      monter.point_swap_direction = getRandomIntInclusive(main_canvas.width/2,main_canvas.width);
+    break;
+    case 2:
+      monter.x = main_canvas.width - 50;
+      monter.y = getRandomIntInclusive(0,main_canvas.height -50);
+      monter.run_stepX = -main_canvas.width/500;
+      monter.run_stepY = (random_height_point - monter.y)/500;
+      if(getRandomIntInclusive(0,1)) {monter.point_swap_direction = 0; break;}
+      monter.point_swap_direction = getRandomIntInclusive(0,main_canvas.width/2);
+    break;
+    case 3:
+      monter.y = 0;
+      monter.x = getRandomIntInclusive(0,main_canvas.width -50);
+      monter.run_stepX = (random_width_point - monter.x)/500;
+      monter.run_stepY = main_canvas.height/500;
+      if(getRandomIntInclusive(0,1)) {monter.point_swap_direction = 600; break;}
+      monter.point_swap_direction = getRandomIntInclusive(main_canvas.height/2, main_canvas.height);
+    break;
+    case 4:
+      monter.y = main_canvas.height - 50;
+      monter.x = getRandomIntInclusive(0,main_canvas.width - 50);
+      monter.run_stepX = (random_width_point - monter.x)/500;
+      monter.run_stepY = -main_canvas.height/500;
+      if(getRandomIntInclusive(0,1)) {monter.point_swap_direction = 0; break;}
+      monter.point_swap_direction = getRandomIntInclusive(0, main_canvas.height/2);
+    break;
+  }
+}
+function checkAllMonterDied() {
+  var temp =0;
+  for (var i = 0; i < monters_numb; i++) {
+    if (monters[i].status == 0) {
+      temp++;
+    }
+  }
+  if (temp == monters_numb) {
+    canClick_main_screen = false;
+  }
+}
+//handing event mouse click
+function mouseMoveHandler(e) {
+  var relativeX_situation = e.clientX - situation_canvas.offsetLeft;
+  var relativeY_situation = e.clientY - situation_canvas.offsetTop;
+  var relativeX_main = e.clientX - main_canvas.offsetLeft;
+  var relativeY_main = e.clientY - main_canvas.offsetTop;
+  //handing event click options (boom, reset, pause, stop)
+  if (!isGame_over) {
+    if (relativeY_situation > 0 && relativeY_situation < 110) {//clicked on situation place
+      if (relativeY_situation > 60 && relativeY_situation < 100) {//height of all option
+        if (relativeX_situation > resetX && relativeX_situation < (resetX + 40)) {
+          handingEventOptionClicked("reset");
+          return;
+        }
+      }
+    }
+
+    if (relativeY_situation > 0 && relativeY_situation < 110) {//clicked on situation place
+      if (relativeY_situation > 60 && relativeY_situation < 100) {//height of all option
+        if (relativeX_situation > boomX && relativeX_situation < (boomX + 40)) {
+          if (canclick_boom) {
+            handingEventOptionClicked("boom");
+            return;
+          }
+        }
+        if (relativeX_situation > stopX && relativeX_situation < (stopX + 40)) {
+          if (canclick_stop) {
+            handingEventOptionClicked("stop");
+            return;
+          }
+        }
+        if (relativeX_situation > pauseX && relativeX_situation < (pauseX + 40)) {
+          if (canClick_pause) {
+            handingEventOptionClicked("pause");
+            return;
+          }
+        }
+      }
+      return;
+    }
+      }
+    if (canClick_main_screen) {
+    //handing event click main space
+    var isHit = false;
+    for (var i = 0; i < ((monters_appeared_mub < monters_numb)?monters_appeared_mub:20); i++) {
+      if (monters[i].status == 1 && //handing status of monter
+        (relativeX_main > monters[i].x - 50) && (relativeX_main < monters[i].x + 50) && //if mouse point > leftSide and < rightSide of monter
+        (relativeY_main > monters[i].y - 50) && (relativeY_main < monters[i].y + 50)) {//if mouse point > topSide and < bottomSide of mnter
+          monters[i].status = 0;
+          monters[i].clicked = true;
+          ctx.clearRect(0, 0, main_canvas.width, main_canvas.height);
+          drawMonters();
+          score ++;
+          livesBonus++;
+          var monter_die_music = new Audio("res/sound/monterdie.wav");
+          monter_die_music.play();
+          if (livesBonus == 5) {
+            lives++;
+            if (lives == 8) {
+              isHeart_big = true;
+            }
+            livesBonus = 0;
+          }
+          isHit = true;
+        }
+      }
+      if (!isHit) {
+        score -= 3;
+        if (score < 0) {
+          score = 0;
+          lives = 0;
+        }
+        var click_fail_music = new Audio("res/sound/clickfail.wav");
+        click_fail_music.play();
+        checkLives();
+      }
+    }
+    if (isGame_over && canPlay_again) {
+      if (relativeX_main > (main_canvas.width/2 - 50) && relativeX_main < (main_canvas.width/2 + 50) &&
+      relativeY_main > 200 && relativeY_main < 300 && lives < 1) {
+        isGame_over = false;
+        canPlay_again = false;
+        canClick_main_screen = true;
+        reset();
+      }
+    }
+}
+function handlekeydown(e) {
+  if ((e.keyCode == 81) && canclick_boom) {
+      handingEventOptionClicked("boom");
+  }
+  if ((e.keyCode == 87) && canclick_stop) {
+      handingEventOptionClicked("stop");
+      return;
+  }
+  if ((e.keyCode == 69) && canClick_pause) {
+      handingEventOptionClicked("pause");
+      return;
+  }
+  if (e.keyCode == 82) {
+      handingEventOptionClicked("reset");
+      return;
+  }
+  console.log('keycode: '+e.keyCode);
+}
+document.addEventListener('keydown',handlekeydown,false);
 document.addEventListener("mousedown", mouseMoveHandler, false);
 
 function handingEventOptionClicked(option) {
@@ -174,10 +291,10 @@ function handingEventOptionClicked(option) {
       if (boom_numb < 1) {
         canUse_boom = false;
       } else {
-        console.log("pass");
         for (var i = 0; i < monters_appeared_mub; i++) {
           if (monters[i].status == 1) {
             monters[i].status = 0;
+            monters[i].clicked = true;
             monters_die_by_boom++;
           }
         }
@@ -185,11 +302,11 @@ function handingEventOptionClicked(option) {
         boom_numb--;
       }
     }
-    console.log("boom is clicked!");
     break;
     case "stop":
     if (canStop) {
       if (stop_numb-- < 1) {
+        stop_numb = 0;
         canStop = false;
       } else {
         situation_ctx.clearRect(0,0,situation_canvas.width,situation_canvas.height);
@@ -216,7 +333,6 @@ function handingEventOptionClicked(option) {
         },1000);
       }
     }
-    console.log("stop is clicked!");
     break;
     case "pause":
     if (( pause_numb == 0 && !canPause)|| canPlay) {
@@ -227,7 +343,7 @@ function handingEventOptionClicked(option) {
       background_music.play();
       canPlay = false;
       canPause = true;
-      canClick = true;
+      canClick_main_screen = true;
       canUse_boom = true;
       canclick_stop = true;
     } else if(canPause && pause_numb > 0){
@@ -240,16 +356,13 @@ function handingEventOptionClicked(option) {
       canPause = !canPause;
       situation_ctx.clearRect(0,0,situation_canvas.width,situation_canvas.height);
       drawSituation();
-      canClick = false;
+      canClick_main_screen = false;
     }
-    console.log("pause is clicked!");
     break;
     case "reset":
     reset();
-    console.log("reset is clicked!");
     break;
     default:
-    console.log("wrong place is clicked!");
   }
 }
 //draw all parameters of game's situation
@@ -344,9 +457,18 @@ function drawOptionIcon() {
   } else situation_ctx.drawImage(reset_icon,resetX,60,40,40);
 }
 function drawGameOver() {
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.fillRect(main_canvas.width/2 - 160,0,350,100);
+  ctx.font = "30px Comic Sans MS";
+  ctx.fillStyle = "red";
+  ctx.fillText("YOUR SCORE:  " + sessionStorage.yourScore,main_canvas.width/2 - 150,40);
+  if (isNew_highScore) {
+    ctx.fillText("NEW HIGH SCORE:  " + sessionStorage.highScore,main_canvas.width/2 - 150,80);
+  } else ctx.fillText("HIGH SCORE:  " + sessionStorage.highScore,main_canvas.width/2 - 150,80);
+
   ctx.drawImage(game_over,main_canvas.width/2 - 150,100, 300, 120);
   ctx.drawImage(play_again,main_canvas.width/2 - 50, 200,100,100);
-  canClick = false;
+  canClick_main_screen = false;
   drawSituation();
 }
 function drawCountDownNumber(numb) {
@@ -361,30 +483,14 @@ function drawCountDownNumber(numb) {
 }
 drawSituation();
 
-//------------------------------------------------------
-function resetMonters(){
-  for (var i = 0; i < monters_numb; i++) {
-    monters[i] = {x : 0, y : 0, run_stepX : 0, run_stepY : 0, status : 0};
-  }
-}
-function setNewMonter() {
-  if (monters_appeared_mub < monters_numb) {
-    var monter_radians = (Math.TAU * Math.random()) - (Math.TAU/4);
-    monters[monters_appeared_mub].x = monter_positionX + Math.cos(monter_radians) * armLength;
-    monters[monters_appeared_mub].y = monter_positionY + Math.sin(monter_radians) * armLength;
-    monters[monters_appeared_mub].run_stepX = (monter_positionX - monters[monters_appeared_mub].x + 50)/100;
-    monters[monters_appeared_mub].run_stepY = (monter_positionY - monters[monters_appeared_mub].y + 50)/100;
-    monters[monters_appeared_mub].status = 1;
-    clearInterval(auto_run_monter);
-  } else {
-    checkAllMonterDied();
-  }
-}
 //create monters if they' status equal 1
 function drawMonters() {
   for (var i = 0; i < ((monters_appeared_mub < monters_numb)?monters_appeared_mub:20); i++) {
     if (monters[i].status == 1) {
       ctx.drawImage(img,monters[i].x  - 50,monters[i].y - 50,100,100);
+    }
+    if (monters[i].clicked) {
+      ctx.drawImage(blood_img,monters[i].x  - 50,monters[i].y - 50,100,100);
     }
   }
 }
@@ -400,8 +506,32 @@ function update () {
         checkLives();
         monters[i].status = 0;
       } else {
-        monters[i].x += monters[i].run_stepX * speed_monter;
-        monters[i].y += monters[i].run_stepY * speed_monter;
+        if (!monters[i].isSwap_direction) {
+          switch (monters[i].sideAppear) {
+            case 1:
+            if (monters[i].x > monters[i].point_swap_direction) {
+              if (getRandomIntInclusive(0,1)) {monters[i].run_stepX = -monters[i].run_stepX; monters[i].run_stepY = -monters[i].run_stepY;monters[i].isSwap_direction = true;}
+            }
+            break;
+            case 2:
+            if (monters[i].x < monters[i].point_swap_direction) {
+              if (getRandomIntInclusive(0,1)) {monters[i].run_stepX = -monters[i].run_stepX; monters[i].run_stepY = -monters[i].run_stepY;monters[i].isSwap_direction = true;}
+            }
+            break;
+            case 3:
+            if (monters[i].y > monters[i].point_swap_direction) {
+              if (getRandomIntInclusive(0,1)) {monters[i].run_stepX = -monters[i].run_stepX; monters[i].run_stepY = -monters[i].run_stepY;monters[i].isSwap_direction = true;}
+            }
+            break;
+            case 4:
+            if (monters[i].y < monters[i].point_swap_direction) {
+              if (getRandomIntInclusive(0,1)) {monters[i].run_stepX = -monters[i].run_stepX; monters[i].run_stepY = -monters[i].run_stepY;monters[i].isSwap_direction = true;}
+            }
+            break;
+          }
+        }
+        monters[i].x += monters[i].run_stepX * level;
+        monters[i].y += monters[i].run_stepY * level;
       }
     }
   }
@@ -411,7 +541,18 @@ function checkLives() {
     isHeart_big = false;
   }
   if (lives < 1) {
+    sessionStorage.yourScore = score;
+    if (sessionStorage.yourScore > sessionStorage.highScore) {
+      sessionStorage.highScore = sessionStorage.yourScore;
+      isNew_highScore = true;
+    } else isNew_highScore = false;
     isGame_over = true;
+      var wait_time = setInterval(
+        function () {
+          canPlay_again = true;
+          clearInterval(wait_time);
+        }
+      ,3500);
     for (var i = 0; i < monters_appeared_mub; i++) {
       monters[i].status = 0;
     }
@@ -425,7 +566,6 @@ function clearRun() {
 function run() {
   var real_time = new Date().getTime();
   remaining_time = 20000 - real_time + start_time;//caculation remaining time to change level
-  console.log(remaining_time);
   update();
   drawMonters();
   drawSituation();
@@ -436,17 +576,6 @@ function run() {
     clearRun();
   }
 }
-function checkAllMonterDied() {
-  var temp =0;
-  for (var i = 0; i < monters_numb; i++) {
-    if (monters[i].status == 0) {
-      temp++;
-    }
-  }
-  if (temp == monters_numb) {
-    canClick = false;
-  }
-}
 function runNewMonter() {
   setNewMonter();
   monters_appeared_mub++;
@@ -455,7 +584,7 @@ function runNewMonter() {
 }
 
 function resetLevel(argument) {
-  canClick = true;
+  canClick_main_screen = true;
   if (time_change_level != remaining_time) {
     remaining_time = 20000;
     clearInterval(main_run);
@@ -483,13 +612,16 @@ function main() {
   main_run = setInterval(resetLevel,20000);
 }
 function reset() {
+  ctx.clearRect(0, 0, main_canvas.width, main_canvas.height);
+  situation_ctx.clearRect(0,0,situation_canvas.width,situation_canvas.height);
+  drawSituation();
   clearInterval(auto_run_monter);
   clearInterval(auto_run_level);
   clearInterval(main_run);
   speed = 1000;
   speed_monter = 1.0;
   time_change_level = 20000;
-  score = 0;
+  score = 10  ;
   level = 1;
   lives = 5;
   livesBonus = 0;
@@ -498,21 +630,20 @@ function reset() {
   pause_numb = 3;
   start_time;
   remaining_time = 20000;
-  //check img loaded or not
-  isLoad_boom = false;
-  isLoad_pause = false;
-  isLoad_reset = false;
-  isLoad_stop = false;
-  isLoad_heart = false;
-  isLoad_play = false;
-  isHeart_big = false;
   //status of game
-  canClick = true;
-  canUse_boom = true;
-  canPause = true;
-  canStop = true;
-  canReset = true;
+  canClick_main_screen = true;
+  canUse_boom = false;
+  canPause = false;
+  canStop = false;
+  canReset = false;
   canPlay = false;
+  var wait_time_reset = setInterval(function () {
+    canUse_boom = true;
+    canPause = true;
+    canStop = true;
+    canReset = true;
+    clearInterval(wait_time_reset);
+  },2000);
   main();
 }
 main();
